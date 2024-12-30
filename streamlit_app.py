@@ -101,7 +101,7 @@ else:
                 st.write(TA_0s[1])
             with col2: 
                 TA_rating_2 = st.slider(label='TA_2', min_value=0, max_value=100, step=1,
-                                    value=50, label_visibility='hidden')
+                                    value=50, label_visibility='collapsed')
             with col3:
                 st.write(TA_100s[1])
             if TA_rating_2 < 40:
@@ -115,7 +115,7 @@ else:
                 st.write(TA_0s[2])
             with col2: 
                 TA_rating_3 = st.slider(label='TA_3', min_value=0, max_value=100, step=1,
-                                    value=50, label_visibility='hidden')
+                                    value=50, label_visibility='collapsed')
             with col3:
                 st.write(TA_100s[2])
             if TA_rating_3 < 40:
@@ -129,7 +129,7 @@ else:
                 st.write(TA_0s[3])
             with col2: 
                 TA_rating_4 = st.slider(label='TA_4', min_value=0, max_value=100, step=1,
-                                    value=50, label_visibility='hidden')
+                                    value=50, label_visibility='collapsed')
             with col3:
                 st.write(TA_100s[3])
             if TA_rating_4 < 40:
