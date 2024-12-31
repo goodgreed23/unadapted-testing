@@ -33,7 +33,7 @@ style_id = 0
 min_turns = 10   # number of turns to make before users can save the chat
 
 # Show title and description.
-st.title(" Therapist Chatbot Evaluation 👋")
+st.title(" Therapist Chatbot Evaluation")
 
 # Get participant ID 
 user_PID = st.text_input("What is your participant ID?")
