@@ -29,31 +29,50 @@ from utils.utils import response_generator
 
 st.set_page_config(page_title="Therapist Chatbot Evaluation", page_icon=None, layout="centered", initial_sidebar_state="expanded", menu_items=None)
 
+style_id = 0
+
 # Show title and description.
 st.title(" Therapist Chatbot Evaluation 👋")
 
 # Get participant ID 
 user_PID = st.text_input("What is your participant ID?")
 
-style_id = 0
-
-
 # Create a dropdown selection box
 # target_style = st.selectbox('Choose a communication st:', styles)
 
 # Display the selected option
-st.write("*After at least 10 responses from the therapist, you may enter 'save' or 'exit' to save the conversation.*")
+st.write("""**After at least 10 responses from the therapist, you may click the 'save' button to save the conversation 
+         and fill out the evaluation questions in the sidebar.**""")
 
 # Retrieve api key from secrets
 openai_api_key = st.secrets["OPENAI_API_KEY"]
 
-if not openai_api_key:
-    st.info("Please add your OpenAI API key to continue.", icon="🗝️")
+# GCP credentials and bucket
+credentials_dict = {
+        'type': st.secrets.gcs["type"],
+        'client_id': st.secrets.gcs["client_id"],
+        'client_email': st.secrets.gcs["client_email"],
+        'private_key': st.secrets.gcs["private_key"],
+        'private_key_id': st.secrets.gcs["private_key_id"],
+        }
+credentials = ServiceAccountCredentials.from_json_keyfile_dict(
+    credentials_dict
+)
+# credentials = Credentials.from_service_account_info(
+#     credentials_dict
+# )
+client = storage.Client(credentials=credentials, project='galvanic-fort-430920-e8')
+bucket = client.get_bucket('streamlit-bucket-bot-eval')
+file_name = ''
+if not user_PID:
+    st.info("Please enter your participant ID to continue.", icon="🗝️")
 else:
-
+    exit_ind = 0
+    # save_ind = 0 
+    
     # Create an OpenAI client.
     # llm = ChatOpenAI(model="gpt-4o-mini", api_key=openai_api_key)
-    llm = ChatOpenAI(model="gpt-4o", api_key=openai_api_key)
+    llm = ChatOpenAI(model="gpt-4o-mini", api_key=openai_api_key)
 
     # therapist agent
     therapist_model_config = MODEL_CONFIGS['Therapist']
@@ -76,10 +95,14 @@ else:
     if "messages" not in st.session_state:
         st.session_state.messages = [
             # Prewritten first turn
-            {"role": "user", "content": "Hello."},
-            {"role": "assistant", "content": "Hello there! How are you feeling today?"},
+            # {"role": "user", "content": "Hello."},
+            {"role": "assistant", "content": """Hello, I am an AI therapist, here to support you in navigating the challenges and emotions you may face as a caregiver. 
+             Is there a specific caregiving challenge or experience you would like to share with me today?"""},
         ]
+    if "disabled" not in st.session_state:
+        st.session_state.disabled = False
 
+    
     with st.sidebar:
         with st.expander(label='Evaluation Section 1', expanded=True):
             col1, col2, col3 = st.columns(3)
@@ -90,6 +113,8 @@ else:
                                         value=50, label_visibility='hidden')
             with col3:
                 st.write(TA_100s[0])
+            TA_rationale_1_pos = ''
+            TA_rationale_1_neg = ''
             if TA_rating_1 < 40:
                 TA_rationale_1_neg = st.text_input("What made you feel unheard or disrespected during the session?")
             if TA_rating_1 > 60:
@@ -104,6 +129,8 @@ else:
                                     value=50, label_visibility='collapsed')
             with col3:
                 st.write(TA_100s[1])
+            TA_rationale_2_pos = ''
+            TA_rationale_2_neg = ''
             if TA_rating_2 < 40:
                 TA_rationale_2_neg = st.text_input("What important topics or goals did you feel were missed?")
             if TA_rating_2 > 60:
@@ -118,6 +145,8 @@ else:
                                     value=50, label_visibility='collapsed')
             with col3:
                 st.write(TA_100s[2])
+            TA_rationale_3_pos = ''
+            TA_rationale_3_neg = ''
             if TA_rating_3 < 40:
                 TA_rationale_3_neg = st.text_input("What about the chatbot's approach didn't work well for you?")
             if TA_rating_3 > 60:
@@ -132,6 +161,8 @@ else:
                                     value=50, label_visibility='collapsed')
             with col3:
                 st.write(TA_100s[3])
+            TA_rationale_4_pos = ''
+            TA_rationale_4_neg = ''
             if TA_rating_4 < 40:
                 TA_rationale_4_neg = st.text_input("What were the main things that made this session unsatisfactory?")
             if TA_rating_4 > 60:
@@ -189,6 +220,36 @@ else:
                                         value=50,label_visibility="collapsed")
             with col3:
                 st.write("Very well")
+        
+
+        st.write('If you have not saved your conversation yet. Please save your conversation before you can save your ratings.')
+    
+        if st.button('Save ratings'): exit_ind = 1
+
+        if exit_ind == 1:
+
+            
+            ratings_data = {
+                'aspect': ['TA_rating_1', 'TA_rating_2', 'TA_rating_3','TA_rating_4','TA_rationale_1_pos', 'TA_rationale_2_pos', 
+                           'TA_rationale_3_pos', 'TA_rationale_4_pos',
+                           'TA_rationale_1_neg', 'TA_rationale_2_neg', 'TA_rationale_3_neg', 'TA_rationale_4_neg',
+                           'UE_rating_1','UE_rating_2',
+                           'Empathy_rating_1','Empathy_rating_2','Empathy_rating_3'],
+                'rating': [TA_rating_1, TA_rating_2, TA_rating_3,TA_rating_4,
+                           TA_rationale_1_pos, TA_rationale_2_pos, TA_rationale_3_pos, TA_rationale_4_pos,
+                           TA_rationale_1_neg, TA_rationale_2_neg, TA_rationale_3_neg, TA_rationale_4_neg,
+                           UE_rating_1,UE_rating_2,
+                           Empathy_rating_1,Empathy_rating_2,Empathy_rating_3]
+            }
+            ratings_df = pd.DataFrame(ratings_data)
+
+            file_name = "EvalRatings_{style}_P{PID}.csv".format(style=target_styles[style_id], PID=user_PID)
+            ratings_df.to_csv(file_name, index=False)
+            blob = bucket.blob(file_name)
+            blob.upload_from_filename(file_name)
+            st.write("**Evaluation ratings was uploaded successfully.**")
+
+
         # add_selectbox = st.selectbox(
         #     "How would you like to be contacted?",
         #     ("Email", "Home phone", "Mobile phone")
@@ -205,85 +266,78 @@ else:
             st.markdown(message["content"])
 
     chat_history_df = pd.DataFrame(st.session_state.messages)
-
+    
+    
     # Create a chat input field to allow the user to enter a message. This will display
     # automatically at the bottom of the page.
-    if user_input := st.chat_input("Enter your input here."):
+    if user_input := st.chat_input("Enter your input here.", disabled=st.session_state.disabled):
+        st.session_state['disable_chat_input'] = False
 
-        if user_input=="SAVE" or user_input=="save" or user_input=="STOP" or user_input=="stop":
-            file_name = "{style}_P{PID}.csv".format(style=target_styles[style_id], PID=user_PID)
-            st.write("file name is "+file_name)
-            
-            chat_history_df.to_csv(file_name, index=False)
-            credentials_dict = {
-            'type': st.secrets.gcs["type"],
-            'client_id': st.secrets.gcs["client_id"],
-            'client_email': st.secrets.gcs["client_email"],
-            'private_key': st.secrets.gcs["private_key"],
-            'private_key_id': st.secrets.gcs["private_key_id"],
-            }
-            credentials = ServiceAccountCredentials.from_json_keyfile_dict(
-                credentials_dict
-            )
-            # credentials = Credentials.from_service_account_info(
-            #     credentials_dict
-            # )
-            client = storage.Client(credentials=credentials, project='galvanic-fort-430920-e8')
-            bucket = client.get_bucket('streamlit-bucket-bot-eval')
-            blob = bucket.blob(file_name)
-            blob.upload_from_filename(file_name)
-            st.write("Chat history was uploaded. You can safely exit this chat now.")
+        # create a therapy chatbot llm chain
+        therapyagent_chain = therapyagent_prompt_template | llm
+        therapy_chain_with_history = RunnableWithMessageHistory(
+            therapyagent_chain,
+            lambda session_id: msgs,  # Always return the instance created earlier
+            input_messages_key="input",
+            # output_messages_key="content",
+            history_messages_key="history",
+        )
 
-            # csv = chat_history_df.to_csv()
-            # st.download_button(
-            #     label="Click here to also download a local copy of your chat history.",
-            #     data=csv,
-            #     file_name=file_name,
-            #     mime="text/csv",
-            # )
-            
-        else:
-            # create a therapy chatbot llm chain
-            therapyagent_chain = therapyagent_prompt_template | llm
-            therapy_chain_with_history = RunnableWithMessageHistory(
-                therapyagent_chain,
-                lambda session_id: msgs,  # Always return the instance created earlier
-                input_messages_key="input",
-                # output_messages_key="content",
-                history_messages_key="history",
-            )
-
-            # create a csm chain
-            csmagent_chain = LLMChain(
-                llm=llm,
-                prompt=csm_prompt_template,
-                verbose=False,
-                output_parser=StrOutputParser()
-            )
+        # create a csm chain
+        csmagent_chain = LLMChain(
+            llm=llm,
+            prompt=csm_prompt_template,
+            verbose=False,
+            output_parser=StrOutputParser()
+        )
 
 
-            # Store and display the current prompt.
-            st.session_state.messages.append({"role": "user", "content": user_input})
-            with st.chat_message("user"):
-                st.markdown(user_input)
+        # Store and display the current prompt.
+        st.session_state.messages.append({"role": "user", "content": user_input})
+        with st.chat_message("user"):
+            st.markdown(user_input)
 
 
-            config = {"configurable": {"session_id": "any"}}
-            unada_response = therapy_chain_with_history.invoke({"input": user_input}, config)
-            unada_bot_response = unada_response.content
+        config = {"configurable": {"session_id": "any"}}
+        unada_response = therapy_chain_with_history.invoke({"input": user_input}, config)
+        unada_bot_response = unada_response.content
 
-            target_style = target_styles[style_id]
-            definition = definitions[style_id]
-            survey_item = survey_items[style_id]
-            ada_response = csmagent_chain.predict(communication_style=target_style,
-                                                definition=definition,
-                                                survey_item=survey_item,
-                                                unadapted_chat_history= st.session_state.messages,
-                                                unadapted_response=unada_bot_response)
+        target_style = target_styles[style_id]
+        definition = definitions[style_id]
+        survey_item = survey_items[style_id]
+        ada_response = csmagent_chain.predict(communication_style=target_style,
+                                            definition=definition,
+                                            survey_item=survey_item,
+                                            unadapted_chat_history= st.session_state.messages,
+                                            unadapted_response=unada_bot_response)
 
-            # Stream the response to the chat using `st.write_stream`, then store it in 
-            # session state.
-            with st.chat_message("assistant"):
-                response = st.write_stream(response_generator(response = unada_bot_response))
-                # response = st.write_stream(response_generator(response = ada_response))
-            st.session_state.messages.append({"role": "assistant", "content": unada_bot_response})
+        # Stream the response to the chat using `st.write_stream`, then store it in 
+        # session state.
+        with st.chat_message("assistant"):
+            response = st.write_stream(response_generator(response = unada_bot_response))
+
+        st.session_state.messages.append({"role": "assistant", "content": unada_bot_response})
+
+
+
+    if chat_history_df.shape[0]>=1:
+        if st.button("Save & Start Evaluation"):
+            st.session_state.disabled = True
+
+    if st.session_state.disabled:
+        file_name = "{style}_P{PID}.csv".format(style=target_styles[style_id], PID=user_PID)
+        # st.write("file name is "+file_name)
+        
+        chat_history_df.to_csv(file_name, index=False)
+        
+        blob = bucket.blob(file_name)
+        blob.upload_from_filename(file_name)
+        st.write("**Chat history was uploaded successfully. You can begin filling out the evaluation questions in the side bar now.**")
+
+        # csv = chat_history_df.to_csv()
+        # st.download_button(
+        #     label="Click here to also download a local copy of your chat history.",
+        #     data=csv,
+        #     file_name=file_name,
+        #     mime="text/csv",
+        # )
