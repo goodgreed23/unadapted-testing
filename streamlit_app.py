@@ -30,7 +30,7 @@ from utils.utils import response_generator
 st.set_page_config(page_title="Therapist Chatbot Evaluation", page_icon=None, layout="centered", initial_sidebar_state="expanded", menu_items=None)
 
 style_id = 0
-min_turns = 5   # number of turns to make before users can save the chat
+min_turns = 10   # number of turns to make before users can save the chat
 
 # Show title and description.
 st.title(" Therapist Chatbot Evaluation 👋")
@@ -68,8 +68,7 @@ file_name = ''
 if not user_PID:
     st.info("Please enter your participant ID to continue.", icon="🗝️")
 else:
-    exit_ind = 0
-    # save_ind = 0 
+    
     
     # Create an OpenAI client.
     # llm = ChatOpenAI(model="gpt-4o-mini", api_key=openai_api_key)
@@ -223,8 +222,8 @@ else:
                 st.write("Very well")
         
 
-        st.write('If you have not saved your conversation yet. Please save your conversation before you can save your ratings.')
-    
+        st.write('If you have not saved your conversation yet. Please save your conversation before you save your ratings.')
+        exit_ind = 0
         if st.button('Save ratings'): exit_ind = 1
 
         if exit_ind == 1:
@@ -271,8 +270,8 @@ else:
     
     # Create a chat input field to allow the user to enter a message. This will display
     # automatically at the bottom of the page.
-    if user_input := st.chat_input("Enter your input here.", disabled=st.session_state.disabled):
-        st.session_state['disable_chat_input'] = False
+    if user_input := st.chat_input("Enter your input here."):
+
 
         # create a therapy chatbot llm chain
         therapyagent_chain = therapyagent_prompt_template | llm
@@ -318,14 +317,10 @@ else:
             response = st.write_stream(response_generator(response = unada_bot_response))
 
         st.session_state.messages.append({"role": "assistant", "content": unada_bot_response})
-
+        chat_history_df = pd.DataFrame(st.session_state.messages)
 
 
     if chat_history_df.shape[0]>=min_turns:
-        if st.button("Save & Start Evaluation"):
-            st.session_state.disabled = True
-
-    if st.session_state.disabled:
         file_name = "{style}_P{PID}.csv".format(style=target_styles[style_id], PID=user_PID)
         # st.write("file name is "+file_name)
         
@@ -333,7 +328,9 @@ else:
         
         blob = bucket.blob(file_name)
         blob.upload_from_filename(file_name)
-        st.write("**Chat history was uploaded successfully. You can begin filling out the evaluation questions in the side bar now.**")
+
+        if st.button("Save & Start Evaluation"):
+            st.write("**Chat history was uploaded successfully. You can begin filling out the evaluation questions in the side bar now.**")
 
         # csv = chat_history_df.to_csv()
         # st.download_button(
