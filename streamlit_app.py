@@ -30,6 +30,7 @@ from utils.utils import response_generator
 st.set_page_config(page_title="Therapist Chatbot Evaluation", page_icon=None, layout="centered", initial_sidebar_state="expanded", menu_items=None)
 
 style_id = 0
+min_turns = 5   # number of turns to make before users can save the chat
 
 # Show title and description.
 st.title(" Therapist Chatbot Evaluation 👋")
@@ -320,7 +321,7 @@ else:
 
 
 
-    if chat_history_df.shape[0]>=1:
+    if chat_history_df.shape[0]>=min_turns:
         if st.button("Save & Start Evaluation"):
             st.session_state.disabled = True
 
