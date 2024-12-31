@@ -223,7 +223,7 @@ else:
                 st.write("Very well")
         
 
-        st.write('If you have not saved your conversation yet. Please save your conversation before you save your ratings.')
+        st.write('If you have not saved your conversation yet, please make sure to save your conversation before you save your ratings.')
         exit_ind = 0
         if st.button('Save ratings'): exit_ind = 1
 
