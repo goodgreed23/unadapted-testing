@@ -42,13 +42,13 @@ user_PID = st.text_input("What is your participant ID?")
 # target_style = st.selectbox('Choose a communication st:', styles)
 
 # Display the selected option
-st.write("""**After at least 10 responses from the therapist, you may click the 'save' button to save the conversation 
-         and fill out the evaluation questions in the sidebar.**""")
+st.write("""**Start chatting with the AI therapist. After getting >= 10 responses from the therapist,  a 'save' button will appear. After you finished the conversation naturally,
+         you may click the 'save' button to save the conversation and then fill out the evaluation questions in the sidebar.**""")
 
 # Retrieve api key from secrets
 openai_api_key = st.secrets["OPENAI_API_KEY"]
 
-# GCP credentials and bucket
+# Initializing GCP credentials and bucket details
 credentials_dict = {
         'type': st.secrets.gcs["type"],
         'client_id': st.secrets.gcs["client_id"],
@@ -64,15 +64,16 @@ credentials = ServiceAccountCredentials.from_json_keyfile_dict(
 # )
 client = storage.Client(credentials=credentials, project='galvanic-fort-430920-e8')
 bucket = client.get_bucket('streamlit-bucket-bot-eval')
-file_name = ''
+file_name = 'NA'
+
+
 if not user_PID:
     st.info("Please enter your participant ID to continue.", icon="🗝️")
 else:
     
-    
     # Create an OpenAI client.
+    llm = ChatOpenAI(model="gpt-4o", api_key=openai_api_key)
     # llm = ChatOpenAI(model="gpt-4o-mini", api_key=openai_api_key)
-    llm = ChatOpenAI(model="gpt-4o-mini", api_key=openai_api_key)
 
     # therapist agent
     therapist_model_config = MODEL_CONFIGS['Therapist']
@@ -228,7 +229,6 @@ else:
 
         if exit_ind == 1:
 
-            
             ratings_data = {
                 'aspect': ['TA_rating_1', 'TA_rating_2', 'TA_rating_3','TA_rating_4','TA_rationale_1_pos', 'TA_rationale_2_pos', 
                            'TA_rationale_3_pos', 'TA_rationale_4_pos',
@@ -243,10 +243,10 @@ else:
             }
             ratings_df = pd.DataFrame(ratings_data)
 
-            file_name = "EvalRatings_{style}_P{PID}.csv".format(style=target_styles[style_id], PID=user_PID)
-            ratings_df.to_csv(file_name, index=False)
-            blob = bucket.blob(file_name)
-            blob.upload_from_filename(file_name)
+            ratings_file_name = "EvalRatings_{style}_P{PID}.csv".format(style=target_styles[style_id], PID=user_PID)
+            ratings_df.to_csv(ratings_file_name, index=False)
+            blob = bucket.blob(ratings_file_name)
+            blob.upload_from_filename(ratings_file_name)
             st.write("**Evaluation ratings was uploaded successfully.**")
 
 
@@ -319,7 +319,7 @@ else:
         st.session_state.messages.append({"role": "assistant", "content": unada_bot_response})
         chat_history_df = pd.DataFrame(st.session_state.messages)
 
-
+    # automatically save the conversation after reaching the minimum turns (e.g. 10)
     if chat_history_df.shape[0]>=min_turns:
         file_name = "{style}_P{PID}.csv".format(style=target_styles[style_id], PID=user_PID)
         # st.write("file name is "+file_name)
