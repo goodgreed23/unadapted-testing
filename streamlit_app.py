@@ -29,8 +29,10 @@ from utils.utils import response_generator
 
 st.set_page_config(page_title="Therapist Chatbot Evaluation", page_icon=None, layout="centered", initial_sidebar_state="expanded", menu_items=None)
 
+# CONFIGS
 style_id = 0
 min_turns = 10   # number of turns to make before users can save the chat
+MODEL_SELECTED = "gpt-4o"
 
 # Show title and description.
 st.title(" Therapist Chatbot Evaluation")
@@ -72,7 +74,7 @@ if not user_PID:
 else:
     
     # Create an OpenAI client.
-    llm = ChatOpenAI(model="gpt-4o", api_key=openai_api_key)
+    llm = ChatOpenAI(model=MODEL_SELECTED, api_key=openai_api_key)
     # llm = ChatOpenAI(model="gpt-4o-mini", api_key=openai_api_key)
 
     # therapist agent
@@ -242,8 +244,9 @@ else:
                            Empathy_rating_1,Empathy_rating_2,Empathy_rating_3]
             }
             ratings_df = pd.DataFrame(ratings_data)
-
-            ratings_file_name = "EvalRatings_{style}_P{PID}.csv".format(style=target_styles[style_id], PID=user_PID)
+            
+            ratings_file_name = "EvalRatings_Unadapted_P{PID}.csv".format(PID=user_PID)
+            # ratings_file_name = "EvalRatings_{style}_P{PID}.csv".format(style=target_styles[style_id], PID=user_PID)
             ratings_df.to_csv(ratings_file_name, index=False)
             blob = bucket.blob(ratings_file_name)
             blob.upload_from_filename(ratings_file_name)
@@ -320,8 +323,9 @@ else:
         chat_history_df = pd.DataFrame(st.session_state.messages)
 
     # automatically save the conversation after reaching the minimum turns (e.g. 10)
-    if chat_history_df.shape[0]>=min_turns:
-        file_name = "{style}_P{PID}.csv".format(style=target_styles[style_id], PID=user_PID)
+    if chat_history_df.shape[0]>=min_turns or (user_input=="SAVE" or user_input=="save" or user_input=="STOP" or user_input=="stop"):
+        file_name = "Unadapted_P{PID}.csv".format(PID=user_PID)
+        # file_name = "{style}_P{PID}.csv".format(style=target_styles[style_id], PID=user_PID)
         # st.write("file name is "+file_name)
         
         chat_history_df.to_csv(file_name, index=False)
