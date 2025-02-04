@@ -83,8 +83,6 @@ else:
         st.session_state['start_time'] = datetime.now()
     if "evaluation_durations" not in st.session_state:
         st.session_state["evaluation_durations"] = None
-
-    st.write("Start Time:", st.session_state['start_time'])
     start_time_row = pd.DataFrame([{"role": "Start Time", "content": st.session_state['start_time']}])
 
     # Create an OpenAI client.
@@ -328,15 +326,10 @@ else:
 
     # automatically save the conversation after reaching the minimum turns (e.g. 10)
     if chat_history_df.shape[0]>=min_turns or (user_input=="SAVE" or user_input=="save" or user_input=="STOP" or user_input=="stop"):
-        # duration = save_duration()
 
-        # Add an empty row with "Duration" and "XX times"
         end_time_row = pd.DataFrame([{"role": "End Time", "content": datetime.now()}])
-
         duration_row = pd.DataFrame([{"role": "Duration", "content": save_duration()}])
-        st.write(duration_row['content'])
-
-        # Append the new row
+        # Append the time rows
         chat_history_df = pd.concat([chat_history_df, start_time_row, end_time_row, duration_row], ignore_index=True)
 
         file_name = "Unadapted_P{PID}.csv".format(PID=user_PID)
