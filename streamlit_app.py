@@ -27,6 +27,7 @@ from utils.prompt_utils import target_styles, definitions, survey_items
 from utils.eval_qs import TA_0s, TA_100s
 from utils.utils import response_generator
 import time
+from datetime import datetime
 
 
 st.set_page_config(page_title="Therapist Chatbot Evaluation", page_icon=None, layout="centered", initial_sidebar_state="expanded", menu_items=None)
@@ -71,10 +72,21 @@ bucket = client.get_bucket('streamlit-bucket-bot-eval')
 file_name = 'NA'
 
 
+
+
 if not user_PID:
     st.info("Please enter your participant ID to continue.", icon="🗝️")
 else:
     
+    # start tracking the duration
+    if 'start_time' not in st.session_state:
+        st.session_state['start_time'] = datetime.now()
+    if "evaluation_durations" not in st.session_state:
+        st.session_state["evaluation_durations"] = None
+
+    st.write("Start Time:", st.session_state['start_time'])
+    start_time_row = pd.DataFrame([{"role": "Start Time", "content": st.session_state['start_time']}])
+
     # Create an OpenAI client.
     llm = ChatOpenAI(model=MODEL_SELECTED, api_key=openai_api_key)
     # llm = ChatOpenAI(model="gpt-4o-mini", api_key=openai_api_key)
@@ -104,14 +116,10 @@ else:
             {"role": "assistant", "content": """Hello, I am an AI therapist, here to support you in navigating the challenges and emotions you may face as a caregiver. 
              Is there a specific caregiving challenge or experience you would like to share with me today?"""},
         ]
-    if "start_time" not in st.session_state:
-        st.session_state["start_time"] = None
-    if "evaluation_durations" not in st.session_state:
-        st.session_state["evaluation_durations"] = None
-
+    
     def save_duration():
         if st.session_state["start_time"]:
-            duration = time.time() - st.session_state["start_time"]
+            duration = datetime.now() - st.session_state["start_time"]
             st.session_state["evaluation_durations"] = duration
             # st.session_state["start_time"] = None  # Reset for the next model
         return duration
@@ -269,8 +277,6 @@ else:
 
     chat_history_df = pd.DataFrame(st.session_state.messages)
     
-    # start tracking the duration
-    st.session_state["start_time"] = time.time()
 
     # Create a chat input field to allow the user to enter a message. This will display
     # automatically at the bottom of the page.
@@ -306,11 +312,11 @@ else:
         target_style = target_styles[style_id]
         definition = definitions[style_id]
         survey_item = survey_items[style_id]
-        ada_response = csmagent_chain.predict(communication_style=target_style,
-                                            definition=definition,
-                                            survey_item=survey_item,
-                                            unadapted_chat_history= st.session_state.messages,
-                                            unadapted_response=unada_bot_response)
+        # ada_response = csmagent_chain.predict(communication_style=target_style,
+        #                                     definition=definition,
+        #                                     survey_item=survey_item,
+        #                                     unadapted_chat_history= st.session_state.messages,
+        #                                     unadapted_response=unada_bot_response)
 
         # Stream the response to the chat using `st.write_stream`, then store it in 
         # session state.
@@ -322,18 +328,16 @@ else:
 
     # automatically save the conversation after reaching the minimum turns (e.g. 10)
     if chat_history_df.shape[0]>=min_turns or (user_input=="SAVE" or user_input=="save" or user_input=="STOP" or user_input=="stop"):
-        duration = save_duration()
+        # duration = save_duration()
 
         # Add an empty row with "Duration" and "XX times"
-        new_row = pd.DataFrame([
-            {"role": "Duration", "content": duration},
-            {"role": "Start Time", "content": st.session_state["start_time"]},
-            {"role": "End Time", "content": time.time()}
-        ])
+        end_time_row = pd.DataFrame([{"role": "End Time", "content": datetime.now()}])
 
+        duration_row = pd.DataFrame([{"role": "Duration", "content": save_duration()}])
+        st.write(duration_row['content'])
 
         # Append the new row
-        chat_history_df = pd.concat([chat_history_df, new_row], ignore_index=True)
+        chat_history_df = pd.concat([chat_history_df, start_time_row, end_time_row, duration_row], ignore_index=True)
 
         file_name = "Unadapted_P{PID}.csv".format(PID=user_PID)
         # file_name = "{style}_P{PID}.csv".format(style=target_styles[style_id], PID=user_PID)
