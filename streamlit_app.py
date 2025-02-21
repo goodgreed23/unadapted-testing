@@ -341,8 +341,8 @@ else:
         blob = bucket.blob(file_name)
         blob.upload_from_filename(file_name)
 
-        if st.button("Save Conversation & Start Evaluation"):
-            st.write("**Chat history is saved successfully. You can begin filling out the evaluation questions now.**")
+        if st.button("When the chat feels naturally concluded, click here to save it."):
+            st.write("**Chat history is saved successfully. You can now use the code ‘COCO123’ to continue the evaluation.**")
 
         # csv = chat_history_df.to_csv()
         # st.download_button(
