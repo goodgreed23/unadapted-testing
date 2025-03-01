@@ -29,6 +29,7 @@ from utils.utils import response_generator
 import time
 from datetime import datetime
 
+import shutil
 
 st.set_page_config(page_title="Therapist Chatbot Evaluation", page_icon=None, layout="centered", initial_sidebar_state="expanded", menu_items=None)
 
@@ -332,14 +333,24 @@ else:
         # Append the time rows
         chat_history_df = pd.concat([chat_history_df, start_time_row, end_time_row, duration_row], ignore_index=True)
 
+        
+        created_files_path = "conv_history_P{PID}".format(PID=user_PID)
+        if not os.path.exists(created_files_path):
+            os.makedirs(created_files_path)
+
         file_name = "Unadapted_P{PID}.csv".format(PID=user_PID)
         # file_name = "{style}_P{PID}.csv".format(style=target_styles[style_id], PID=user_PID)
         # st.write("file name is "+file_name)
-        
-        chat_history_df.to_csv(file_name, index=False)
-        
+
+        # chat_history_df.to_csv(file_name, index=False)
+        chat_history_df.to_csv(os.path.join(created_files_path,file_name), index=False)
+
         blob = bucket.blob(file_name)
-        blob.upload_from_filename(file_name)
+        blob.upload_from_filename(os.path.join(created_files_path,file_name))
+        # blob = bucket.blob(file_name)
+        # blob.upload_from_filename(file_name)
+
+        shutil.rmtree(created_files_path)
 
         # if st.button("When the chat feels naturally concluded, click here to save it."):
         #     st.write("**Chat history is saved successfully. You can now use the code ‘COCO123’ to continue the evaluation.**")
