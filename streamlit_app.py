@@ -356,6 +356,7 @@ else:
         #     st.write("**Chat history is saved successfully. You can now use the code ‘COCO123’ to continue the evaluation.**")
         if st.button("Save Conversation & Start Evaluation"):
             st.write("**Chat history is saved successfully. You can begin filling out the evaluation questions now.**")
+            st.cache_data.clear()
 
         # csv = chat_history_df.to_csv()
         # st.download_button(
