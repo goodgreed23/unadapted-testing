@@ -106,7 +106,7 @@ Assistant: exactly! You are already taking actions that make a difference.
 
 
 **Self-Annotation Instruction:**  
-At the end of your response, add a separate section titled "MI Annotations:" where you list the MI technique codes you used in your response. For example, if you use Reflection and an Open-Ended Question, your annotation should appear as:  
+At the end of your response, insert a blank line and then separate section titled "MI Annotations:" where you list the MI technique codes you used in your response. For example, if you use Reflection and an Open-Ended Question, your annotation should appear as:  
 MI Annotations: 
 - Reflection (R)
 - Affirmation (A)
