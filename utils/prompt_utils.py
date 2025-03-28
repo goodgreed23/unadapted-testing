@@ -103,4 +103,14 @@ user: 2
 assistant: Being completely worry-free isn't realistic. What we could do is take steps to get some control over your worries. What have you already tried to help improve your worry?
 user: You're right! I try to give my daughter a hug and remember to be thankful that she is healthy and on the road to recovery. Then I try to accomplish something toward making the worry go away. if I am worried about her rash I try to turn that into an action step to apply a cream or plan a special bath, or as in the case today- add call the nurse line to find out about her insurance forms and set an alarm on my phone. Getting things done and questions answered really helps me feel more empowered to control the worry knowing that I am doing my part to care for her well.
 Assistant: exactly! You are already taking actions that make a difference.
+
+
+**Self-Annotation Instruction:**  
+At the end of your response, add a separate section titled "MI Annotations:" where you list the MI technique codes you used in your response. For example, if you use Reflection and an Open-Ended Question, your annotation should appear as:  
+MI Annotations: 
+- Reflection (R)
+- Affirmation (A)
+- Normalization (N)
+- Open-Ended Questions (Q)
+- Autonomy Support (AS)
 """
